@@ -1,0 +1,361 @@
+---
+title: Long-Short Strategy Using MLFactor Data
+jupyter: python3
+---
+
+
+
+## Introduction
+
+This report develops a machine-learning–driven, long–short, dollar-neutral equity strategy using the MLFactor dataset (2000–2018).
+
+Key goals:
+
+*    Reduce dimensionality using correlation-driven feature clustering
+
+*    Train three predictive models:
+
+        *    Linear Regression (LR)
+
+        *    Neural Network Regression (NN-Reg)
+
+        *    Neural Network Classification (NN-Cls)
+
+*    Evaluate whether feature selection improves model performance
+
+*    Build a monthly long–short strategy (top 20% long, bottom 20% short)
+
+*    Refit models monthly using rolling windows (12–60 months)
+
+*    Compare strategy performance against an equally weighted (EW) benchmark
+
+Backtesting period: 2008–2018
+
+Training data (initial): 2000–2007
+
+## Data Preparation
+
+We begin by loading the MLFactor panel, converting dates, and splitting into:
+
+Training period: 2000–2005 
+
+Validation period: 2006–2007
+
+Backtest period: 2008–2018
+
+Identifiers (stock_id, date) and labels (R1M_Usd, R1M_Usd_C) are kept separate from factor features.
+
+## Feature Selection via Hierarchical Correlation Clustering
+
+To remove redundant features, we follow the method described in the Kaggle reference:
+
+1) Compute absolute correlation matrix
+
+2) Convert correlation to a distance metric:
+
+$$
+d_{ij} = 1 - \lvert \rho_{ij} \rvert
+$$
+
+3) Apply hierarchical clustering
+
+4) Cut clusters at threshold 0.38 (about 35 clusters)
+
+5) From each cluster, select one representative feature:
+
+	* highest variance within that cluster
+
+6) This yields ~35 features, significantly reducing multicollinearity.
+
+```{python}
+## Do not Run This Script ##
+
+## Clustering ##
+```
+
+```{python}
+## Do not Run This Script ##
+
+## Correlation Matrix for Feature Selection ##
+```
+
+### Rationale
+
+Strongly correlated features add noise to linear models
+
+Clustering provides an unsupervised, model-agnostic dimensionality reduction
+
+Avoids feature leakage (no use of labels)
+
+### Outcome
+
+Original features: ~93
+
+Selected features: ~35–40
+
+Clusters: ~35
+
+These selected features are used for LR and NN experiments.
+
+```{python}
+## Do not Run This Script ##
+
+## Dendograms for Feature Selection ##
+```
+
+```{python}
+## Selected Feature via Hierarchical Correlation Clustering ##
+```
+
+## Model Training (2000–2005) : Validation (2006–2007)
+
+We evaluate three model families:
+*    Linear Regression (LR)
+*    Neural Network Regression (NN-Reg)
+*    Neural Network Classification (NN-Cls)
+
+### Linear Regression (LR)
+
+We train LR on:
+
+*  Full feature set
+
+*  Selected feature set
+
+Metrics used:
+
+*  MSE
+
+*  𝑅^2
+
+*  accuracy (for classification)
+
+$$
+\hat{y} > 0 \Rightarrow 1,\qquad \hat{y} < 0 \Rightarrow 0
+$$
+
+Key result:
+
+*  LR for full features outperforms selected features in r^2 and had overall better fit on validation data.
+
+```{python}
+## Don't Run This Script ##
+```
+
+### Neural Network:
+
+We test multiple architectures:
+
+```{python}
+## Define a few NN configs to experiment on both full and selected feature sets
+
+[
+    {
+        "name": "nn_small",
+        "hidden_layers": [64, 32],
+        "l2_strength": 1e-4,
+        "dropout": 0.0,
+        "epochs": 30,
+        "batch_size": 256,
+    },
+    {
+        "name": "nn_medium_dropout",
+        "hidden_layers": [128, 64, 32],
+        "l2_strength": 1e-4,
+        "dropout": 0.2,
+        "epochs": 40,
+        "batch_size": 256,
+    },
+    {
+        "name": "nn_deep_strong_reg",
+        "hidden_layers": [256, 128, 64],
+        "l2_strength": 1e-3,
+        "dropout": 0.3,
+        "epochs": 50,
+        "batch_size": 512,
+    },
+]
+```
+
+### Neural Network Regression (NN-Reg) 
+
+We train LR on:
+
+*  Full feature set
+
+*  Selected feature set
+
+Metrics used:
+
+*  MSE
+
+*  𝑅^2
+
+*  accuracy (for classification)
+
+```{python}
+## Do not Run This Script ##
+## Selected Feature Metrics ##
+```
+
+```{python}
+## Do not Run This Script ##
+## Full Feature Metrics ##
+```
+
+```{python}
+## Do not Run This Script ##
+```
+
+Key result:
+
+*  NN Reg performance is slightly better on nn_deep_strong_reg configuration although overall performance is still similar to LR.
+*  Accuracy ≈ 0.49–0.52, barely above chance
+
+### Neural Network Classification (NN-Cls) 
+
+We train LR on:
+
+*  Full feature set
+
+*  Selected feature set
+
+Metrics used:
+
+*  MSE
+
+*  𝑅^2
+
+*  accuracy (for classification)
+
+```{python}
+## Do not Run This Script ##
+## Selected Feature Metrics ##
+```
+
+```{python}
+## Do not Run This Script ##
+## Full Feature Metrics ##
+```
+
+```{python}
+## Do not Run This Script ##
+```
+
+Key result:
+
+*  NN Cls performance is slightly better on nn_small.
+*  Accuracy ≈ 0.51–0.52 on validation data and 0.55-0.57 on training data, indicating mild overfitting.
+
+## Monthly Rolling Backtest (2008–2018)
+
+### Trading Rule (Common Across All Models)
+
+Each month:
+
+1) Train model using last L months (L = 12, 24, 36, 48, 60)
+
+2) Predict next-month R1M_Usd for all stocks
+
+3) Rank cross-sectionally
+
+4) Go long top 20%
+
+5) Go short bottom 20%
+
+6) Equal-weight within long / short buckets
+
+7) Dollar-neutral strategy:
+
+$$
+\sum w = 0
+$$
+
+### Benchmark
+
+An Equally Weighted Market Portfolio (EW):
+
+*  Equal weight across all stocks each month
+
+*  Serves as baseline for performance comparison
+
+## Performance Metrics
+
+We compute the following for every strategy:
+
+* Annualized Return
+
+* Annualized Volatility
+
+* Sharpe Ratio
+
+* Maximum Drawdown
+
+* Hit Rate (fraction of positive months)
+
+* Correlation to EW portfolio
+
+* Number of backtest months
+
+## Final Backtest Results Summary
+
+### LR vs Benchmark
+
+```{python}
+## Do not Run This Script ##
+
+## SELECTED FEATURES ##
+```
+
+```{python}
+## Do not Run This Script ##
+
+## FULL FEATURES ##
+```
+
+### NN Reg vs Benchmark
+
+```{python}
+## Do not Run This Script ##
+
+## SELECTED FEATURES ##
+```
+
+```{python}
+## Do not Run This Script ##
+
+## FULL FEATURES ##
+```
+
+### NN Cls vs Benchmark
+
+```{python}
+## Do not Run This Script ##
+
+## SELECTED FEATURES ##
+```
+
+```{python}
+## Do not Run This Script ##
+
+## FULL FEATURES ##
+```
+
+## Conclusion
+
+### Linear Regression
+
+Linear Regression gave the best risk-adjusted performance. It produced the highest Sharpe ratios, consistently strong returns, and the smallest drawdowns.
+
+### Neural Network Regression
+
+NN Regression worked moderately well, offering stability and decent performance, but it did not outperform LR due to overfitting risk and noisy nonlinear dynamics.
+
+### Neural Network Classification
+
+Classification struggled because predicting daily direction is extremely noisy. Returns were often negative, Sharpe ratios were low, and drawdowns were deep.
+
+## Final Model Choice
+
+After evaluating all models and configurations, we select Linear Regression (LR) using the SELECTED feature with look back period of 48 months (4 yrs) had the best performance with highest Sharpe Ratio and overall robust metrics compared to other models.
+
