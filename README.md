@@ -6,54 +6,22 @@ The repository demonstrates the use of supervised learning models, regularizatio
 
 ## Projects Overview
 
-1. K-Nearest Neighbors Classification
+### K-Nearest Neighbors Classification
 
-Implemented a K-Nearest Neighbors (KNN) classification model for predictive modeling tasks.
+Implemented a predictive classification model using the K-Nearest Neighbors algorithm to classify observations based on feature similarity.
 
-Algorithms / Methods
+Algorithms / Methods:
+K-Nearest Neighbors (KNN), feature scaling, train-test split evaluation, distance-based classification.
 
-K-Nearest Neighbors (KNN)
+Libraries:
+pandas, numpy, scikit-learn, seaborn, matplotlib.
 
-Feature scaling
+### Volatility Forecasting
 
-Train-test split evaluation
+Developed financial volatility forecasting models using historical return data to estimate future market risk.
 
-Libraries
+Algorithms / Methods:
+GARCH models, time-series return modeling, regression-based forecasting, statistical volatility estimation.
 
-scikit-learn
-
-pandas
-
-numpy
-
-seaborn
-
-matplotlib
-
-2. Volatility Forecasting
-
-Developed models to forecast financial market volatility using historical return data.
-
-Algorithms / Methods
-
-GARCH volatility models (ARCH package)
-
-Linear regression forecasting
-
-Time-series return analysis
-
-Libraries
-
-arch
-
-pandas
-
-numpy
-
-yfinance
-
-matplotlib
-
-seaborn
-
-scikit-learn
+Libraries:
+pandas, numpy, scikit-learn, arch, yfinance, matplotlib, seaborn.
